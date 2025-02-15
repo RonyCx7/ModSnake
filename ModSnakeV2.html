@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Snake Game</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="snakeCanvas" width="400" height="400"></canvas>
+    <script>
+        class Queue {
+            constructor(size) {
+                this.size = size;
+                this.queue = [];
+            }
+
+            isEmpty() {
+                return this.queue.length === 0;
+            }
+
+            isFull() {
+                return this.queue.length === this.size;
+            }
+
+            enqueue(element) {
+                if (!this.isFull()) {
+                    this.queue.push(element);
+                }
+            }
+
+            dequeue() {
+                if (!this.isEmpty()) {
+                    return this.queue.shift();
+                }
+            }
+
+            front() {
+                if (!this.isEmpty()) {
+                    return this.queue[0];
+                }
+            }
+
+            getSize() {
+                return this.queue.length;
+            }
+        }
+
+        const canvas = document.getElementById('snakeCanvas');
+        const ctx = canvas.getContext('2d');
+        const box = 20;
+        const queueSize = parseInt(prompt("Enter the size of the snake queue:"));
+        let snake = new Queue(queueSize);
+        snake.enqueue({ x: 10 * box, y: 10 * box });
+        let direction = 'RIGHT';
+        let food = {
+            x: Math.floor(Math.random() * 20) * box,
+            y: Math.floor(Math.random() * 20) * box
+        };
+
+        document.addEventListener('keydown', directionControl);
+
+        function directionControl(event) {
+            if (event.keyCode === 65 && direction !== 'RIGHT') direction = 'LEFT';
+            if (event.keyCode === 87 && direction !== 'DOWN') direction = 'UP';
+            if (event.keyCode === 68 && direction !== 'LEFT') direction = 'RIGHT';
+            if (event.keyCode === 83 && direction !== 'UP') direction = 'DOWN';
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < snake.getSize(); i++) {
+                const segment = snake.queue[i];
+                ctx.fillStyle = (i === 0) ? 'green' : 'lightgreen';
+                ctx.fillRect(segment.x, segment.y, box, box);
+                ctx.strokeStyle = 'darkgreen';
+                ctx.strokeRect(segment.x, segment.y, box, box);
+            }
+            ctx.fillStyle = 'red';
+            ctx.fillRect(food.x, food.y, box, box);
+
+            let snakeX = snake.front().x;
+            let snakeY = snake.front().y;
+
+            if (direction === 'LEFT') snakeX -= box;
+            if (direction === 'UP') snakeY -= box;
+            if (direction === 'RIGHT') snakeX += box;
+            if (direction === 'DOWN') snakeY += box;
+
+            const newHead = { x: snakeX, y: snakeY };
+
+            if (snakeX === food.x && snakeY === food.y) {
+                food = {
+                    x: Math.floor(Math.random() * 20) * box,
+                    y: Math.floor(Math.random() * 20) * box
+                };
+                snake.enqueue(newHead);
+            } else {
+                snake.dequeue();
+                snake.enqueue(newHead);
+            }
+
+            if (collision(newHead, snake.queue) || collisionWithBorders(newHead)) {
+                clearInterval(game);
+                alert('Game Over!');
+            }
+
+            ctx.fillStyle = 'black';
+            ctx.font = '20px Arial';
+            ctx.fillText('Score: ' + (snake.getSize() - 1), 10, 20);
+        }
+
+        function collision(head, array) {
+            for (let i = 1; i < array.length; i++) { // Start from 1 to skip the head itself
+                if (head.x === array[i].x && head.y === array[i].y) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function collisionWithBorders(head) {
+            return head.x < 0 || head.y < 0 || head.x >= canvas.width || head.y >= canvas.height;
+        }
+
+        let game = setInterval(draw, 100);
+    </script>
+</body>
+</html>
